@@ -2,7 +2,8 @@ export const SOCKET_EVENTS = {
   CLIENT_TO_SERVER: {
     // Messages
     SEND_MESSAGE: 'send_message',
-    GET_MESSAGE_HISTORY: 'get_message_history',
+    CONVERSATION_LIST: 'conversation_list',
+    GET_CONVERSATION: 'get_conversation',
     
     // File upload
     UPLOAD_FILE_CHUNK: 'upload_file_chunk',
@@ -18,7 +19,8 @@ export const SOCKET_EVENTS = {
   SERVER_TO_CLIENT: {
     // Messages
     NEW_MESSAGE: 'new_message',
-    MESSAGE_HISTORY: 'message_history',
+    CONVERSATION_LIST: 'conversation_list',
+    GET_CONVERSATION: 'get_conversation',
     MESSAGE_STATUS_UPDATE: 'message_status_update',
     
     // File upload

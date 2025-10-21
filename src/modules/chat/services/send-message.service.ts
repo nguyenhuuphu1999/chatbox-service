@@ -5,34 +5,26 @@ import { MessageType } from 'src/shared/constants/message.constants';
 import { MESSAGE_STATUS, IMessageStatusEntry } from 'src/shared/constants/message-status.constants';
 
 export interface SendMessageRequest {
-    recipientKey: string;
-    senderKey: string;
-    content: string;
-    messageType: MessageType;
-    replyTo?: string;
+  recipientKey: string;
+  senderKey: string;
+  content: string;
+  messageType: MessageType;
+  replyTo?: string;
   attachments?: {
     url: string;
-    type: string;
-    name: string;
-    size: number;
-    duration?: number;
   }[];
   messageStatus?: IMessageStatusEntry[];
 }
 
 export interface SendMessageResponse {
-    id: string;
-    recipientKey: string;
-    senderKey: string;
-    content: string;
-    messageType: MessageType;
-    replyTo?: string;
+  id: string;
+  recipientKey: string;
+  senderKey: string;
+  content: string;
+  messageType: MessageType;
+  replyTo?: string;
   attachments?: {
     url: string;
-    type: string;
-    name: string;
-    size: number;
-    duration?: number;
   }[];
   messageStatus?: IMessageStatusEntry[];
   createdAt: Date;
@@ -40,15 +32,15 @@ export interface SendMessageResponse {
 
 @Injectable()
 export class SendMessageService {
-    constructor(
-        private readonly chatMessageRepository: ChatMessageRepository,
-        private readonly userRepository: UserRepository,
-    ) {}
+  constructor(
+    private readonly chatMessageRepository: ChatMessageRepository,
+    private readonly userRepository: UserRepository,
+  ) { }
 
   public async sendMessage(request: SendMessageRequest): Promise<SendMessageResponse> {
     try {
       console.log('🔍 SendMessageService.sendMessage called with:', JSON.stringify(request, null, 2));
-      
+
       // Note: User validation is handled in the gateway layer
       // This service assumes the user has already been validated
 
@@ -56,9 +48,9 @@ export class SendMessageService {
       if (request.replyTo) {
         console.log('🔍 Validating reply message:', request.replyTo);
         const replyMessage = await this.chatMessageRepository.findMessageById(request.replyTo);
-        if (!replyMessage || 
-            (replyMessage.senderKey !== request.senderKey && replyMessage.recipientKey !== request.senderKey) ||
-            (replyMessage.senderKey !== request.recipientKey && replyMessage.recipientKey !== request.recipientKey)) {
+        if (!replyMessage ||
+          (replyMessage.senderKey !== request.senderKey && replyMessage.recipientKey !== request.senderKey) ||
+          (replyMessage.senderKey !== request.recipientKey && replyMessage.recipientKey !== request.recipientKey)) {
           throw new BadRequestException('Invalid reply message');
         }
       }
@@ -72,20 +64,22 @@ export class SendMessageService {
         attachments: request.attachments,
       });
 
-            // Create the message with initial status
-            const message = await this.chatMessageRepository.create({
-              recipientKey: request.recipientKey,
-              senderKey: request.senderKey,
-              content: request.content,
-              messageType: request.messageType,
-              replyTo: request.replyTo,
-              attachments: request.attachments,
-              messageStatus: [{
-                userKey: request.senderKey,
-                status: MESSAGE_STATUS.SENT,
-                timestamp: new Date()
-              }]
-            });
+      // Create the message with initial status
+      const messageData = {
+        recipientKey: request.recipientKey,
+        senderKey: request.senderKey,
+        content: request.content,
+        messageType: request.messageType,
+        replyTo: request.replyTo,
+        attachments: request.attachments,
+        messageStatus: [{
+          userKey: request.senderKey,
+          status: MESSAGE_STATUS.SENT,
+          timestamp: new Date().toISOString()
+        }]
+      };
+
+      const message = await this.chatMessageRepository.create(messageData);
 
       console.log('✅ Message created successfully:', message._id);
 

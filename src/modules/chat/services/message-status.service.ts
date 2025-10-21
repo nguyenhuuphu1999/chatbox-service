@@ -17,9 +17,9 @@ export class MessageStatusService {
   public async handleMessageDelivered(
     data: MessageStatusDto,
     client: AuthenticatedSocket,
-  ): Promise<ServiceResponse> {
+  ): Promise<void> {
     try {
-
+      this.logger.log(`Handle message delivered: ${JSON.stringify(data)}`);
       // Update message status to 'delivered'
       const updatedMessage = await this.chatMessageRepository.updateMessageStatus(
         data.messageId, 
@@ -37,23 +37,20 @@ export class MessageStatusService {
           updatedMessage.senderKey
         );
 
-        this.logger.log(`Message ${data.messageId} delivered to ${client.userName}`);
-        return { success: true };
+        this.logger.log(`Message ${data.messageId} delivered to ${client.userName}`); 
       } else {
         this.logger.error(`Message ${data.messageId} not found`);
-        return { error: 'Message not found' };
       }
     } catch (error) {
-      this.logger.error('Message delivered error:', error);
+      this.logger.error(`Message delivered error: ${JSON.stringify(error)}`);
       this.accessControlService.publishError(this.accessControlService.server!, client.userKey || '', error);
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
   public async handleMessageRead(
     data: MessageStatusDto,
     client: AuthenticatedSocket,
-  ): Promise<ServiceResponse> {
+  ): Promise<void> {
     try {
 
       // Update message status to 'read'
@@ -74,15 +71,12 @@ export class MessageStatusService {
         );
 
         this.logger.log(`Message ${data.messageId} read by ${client.userName}`);
-        return { success: true };
       } else {
         this.logger.log(`Message ${data.messageId} not found`);
-        return { error: 'Message not found' };
       }
     } catch (error) {
-      this.logger.error('Message read error:', error);
+      this.logger.error(`Message read error: ${JSON.stringify(error)}`);
       this.accessControlService.publishError(this.accessControlService.server!, client.userKey || '', error);
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 }

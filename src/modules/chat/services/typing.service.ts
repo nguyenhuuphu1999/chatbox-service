@@ -14,9 +14,9 @@ export class TypingService {
   public async handleTypingStart(
     data: TypingDto,
     client: AuthenticatedSocket,
-  ): Promise<ServiceResponse> {
+  ): Promise<void> {
     try {
-      // Publish typing start event to recipient only
+      this.logger.log(`Handle typing start: ${JSON.stringify(data)}`);
       this.accessControlService.publishTypingStart(
         this.accessControlService.server!,
         client.userKey,
@@ -25,20 +25,18 @@ export class TypingService {
       );
 
       this.logger.log(`Typing start: ${client.userName} to ${data.recipientKey}`);
-      return { success: true };
     } catch (error) {
-      this.logger.error('Typing start error:', error);
+      this.logger.error(`Typing start error: ${JSON.stringify(error)}`);
       this.accessControlService.publishError(this.accessControlService.server!, client.userKey || '', error);
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
   public async handleTypingStop(
     data: TypingDto,
     client: AuthenticatedSocket,
-  ): Promise<ServiceResponse> {
+  ): Promise<void> {
     try {
-      // Publish typing stop event to recipient only
+      this.logger.log(`Handle typing stop: ${JSON.stringify(data)}`);
       this.accessControlService.publishTypingStop(
         this.accessControlService.server!,
         client.userKey,
@@ -47,11 +45,9 @@ export class TypingService {
       );
 
       this.logger.log(`Typing stop: ${client.userName} to ${data.recipientKey}`);
-      return { success: true };
     } catch (error) {
-      this.logger.error('Typing stop error:', error);
+      this.logger.error(`Typing stop error: ${JSON.stringify(error)}`);
       this.accessControlService.publishError(this.accessControlService.server!, client.userKey || '', error);
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 }

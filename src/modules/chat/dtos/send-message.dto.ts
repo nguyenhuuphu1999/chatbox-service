@@ -6,20 +6,6 @@ export class AttachmentDto {
   @IsString()
   @IsNotEmpty()
   public url: string;
-
-  @IsString()
-  @IsNotEmpty()
-  public type: string;
-
-  @IsString()
-  @IsNotEmpty()
-  public name: string;
-
-  @IsNotEmpty()
-  public size: number;
-
-  @IsOptional()
-  public duration?: number;
 }
 
 export class SendMessageDto {

@@ -5,7 +5,6 @@ import { ConnectionService } from './services/connection.service';
 import { MessageHandlerService } from './services/message-handler.service';
 import { TypingService } from './services/typing.service';
 import { MessageStatusService } from './services/message-status.service';
-import { AuditLogService } from './services/audit-log.service';
 import { SendMessageService } from './services/send-message.service';
 import { FileUploadService } from './services/file-upload.service';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
@@ -14,6 +13,8 @@ import { AuditLogInterceptor } from './interceptors/audit-log.interceptor';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { UploadHandlerService } from './services/upload-handler.service';
 import { WsValidationExceptionFilter } from './filters/ws-validation-exception.filter';
+import { ConversationListService } from './services/conversation-list.service';
+import { GetConversationService } from './services/get-conversation.service';
 
 @Module({
   imports: [RepositoriesModule],
@@ -21,9 +22,10 @@ import { WsValidationExceptionFilter } from './filters/ws-validation-exception.f
     ChatGateway,
     ConnectionService,
     MessageHandlerService,
+    ConversationListService,
+    GetConversationService,
     TypingService,
     MessageStatusService,
-    AuditLogService,
     AuditLogInterceptor,
     AuthInterceptor,
     WsValidationExceptionFilter,
@@ -36,9 +38,10 @@ import { WsValidationExceptionFilter } from './filters/ws-validation-exception.f
     ChatGateway,
     ConnectionService,
     MessageHandlerService,
+    ConversationListService,
+    GetConversationService,
     TypingService,
     MessageStatusService,
-    AuditLogService,
     AuditLogInterceptor,
     AuthInterceptor,
     WsValidationExceptionFilter,

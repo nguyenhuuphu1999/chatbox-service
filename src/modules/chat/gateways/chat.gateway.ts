@@ -21,20 +21,23 @@ import { SOCKET_EVENTS } from 'src/shared/constants';
 import { AuthenticatedSocket } from '../interfaces/socket.interface';
 import { SendMessageDto } from '../dtos/send-message.dto';
 import { GetMessageHistoryDto } from '../dtos/message-history.dto';
+import { GetConversationDto } from '../dtos/get-conversation.dto';
 import { TypingDto } from '../dtos/typing.dto';
 import { MessageStatusDto } from '../dtos/message-status.dto';
 import { UploadFileChunkDto } from '../dtos/file-upload.dto';
 import { UploadHandlerService } from '../services/upload-handler.service';
+import { ConversationListService } from '../services/conversation-list.service';
+import { GetConversationService } from '../services/get-conversation.service';
 
 /**
  * ChatGateway - Main WebSocket Gateway for Chat Application
- * 
- * Chức năng chính:
- * - Xử lý kết nối/ngắt kết nối Socket.IO
- * - Định tuyến các event message đến các service tương ứng
- * - Validation DTOs cho tất cả incoming data
- * - Quản lý authentication và authorization
- * - Publish events thông qua AccessControlService
+  *
+  * Main functions:
+  * - Handles Socket.IO connection/disconnection
+  * - Route event messages to corresponding services
+  * - Validation DTOs for all incoming data
+  * - Manage authentication and authorization
+  * - Publish events via AccessControlService
  */
 @Injectable()
 @UseInterceptors(AuthInterceptor, AuditLogInterceptor)
@@ -54,7 +57,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly messageStatusService: MessageStatusService,
     private readonly uploadHandlerService: UploadHandlerService,
     private readonly accessControlService: AccessControlService,
-  ) {}
+    private readonly conversationListService: ConversationListService,
+    private readonly getConversationService: GetConversationService,
+  ) { }
 
   public async handleConnection(client: AuthenticatedSocket) {
     // Set server reference in access control service
@@ -67,7 +72,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // ==================== MESSAGE EVENTS ====================
-  
+
   /**
    * Handle send message event
    * - Validates message data using SendMessageDto
@@ -78,26 +83,43 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   public async handleSendMessage(
     @MessageBody() data: SendMessageDto,
     @ConnectedSocket() client: AuthenticatedSocket,
-  ) {
-    return await this.messageHandlerService.handleSendMessage(data, client);
+  ): Promise<void> {
+    await this.messageHandlerService.handleSendMessage(data, client);
   }
 
+  // ==================== GET LIST CONVERSATION EVENTS ====================
   /**
    * Handle get message history event
    * - Validates pagination data using GetMessageHistoryDto
    * - Returns conversation list for authenticated user
    */
-  @SubscribeMessage(SOCKET_EVENTS.CLIENT_TO_SERVER.GET_MESSAGE_HISTORY)
+  @SubscribeMessage(SOCKET_EVENTS.CLIENT_TO_SERVER.CONVERSATION_LIST)
   @UsePipes(new ValidationPipe({ transform: true }))
   public async handleGetMessageHistory(
     @MessageBody() data: GetMessageHistoryDto,
     @ConnectedSocket() client: AuthenticatedSocket,
-  ) {
-    return await this.messageHandlerService.handleGetMessageHistory(data, client);
+  ): Promise<void> {
+    await this.conversationListService.handleConversationList(data, client);
+  }
+
+  // ==================== GET CONVERSATION EVENTS ====================
+  /**
+   * Handle get conversation event
+   * - Validates partner key and pagination data using GetConversationDto
+   * - Returns detailed messages between current user and specified partner
+   * - Response format same as send message
+   */
+  @SubscribeMessage(SOCKET_EVENTS.CLIENT_TO_SERVER.GET_CONVERSATION)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  public async handleGetConversation(
+    @MessageBody() data: GetConversationDto,
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ): Promise<void> {
+    await this.getConversationService.handleGetConversation(data, client);
   }
 
   // ==================== TYPING EVENTS ====================
-  
+
   /**
    * Handle typing start event
    * - Validates recipient data using TypingDto
@@ -108,8 +130,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   public async handleTypingStart(
     @MessageBody() data: TypingDto,
     @ConnectedSocket() client: AuthenticatedSocket,
-  ) {
-    return await this.typingService.handleTypingStart(data, client);
+  ): Promise<void> {
+    await this.typingService.handleTypingStart(data, client);
   }
 
   /**
@@ -122,12 +144,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   public async handleTypingStop(
     @MessageBody() data: TypingDto,
     @ConnectedSocket() client: AuthenticatedSocket,
-  ) {
-    return await this.typingService.handleTypingStop(data, client);
+  ): Promise<void> {
+    await this.typingService.handleTypingStop(data, client);
   }
 
   // ==================== MESSAGE STATUS EVENTS ====================
-  
+
   /**
    * Handle message delivered event
    * - Validates message status data using MessageStatusDto
@@ -138,7 +160,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   public async handleMessageDelivered(
     @MessageBody() data: MessageStatusDto,
     @ConnectedSocket() client: AuthenticatedSocket,
-  ) {
+  ): Promise<void> {
     return await this.messageStatusService.handleMessageDelivered(data, client);
   }
 
@@ -153,11 +175,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: MessageStatusDto,
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    return await this.messageStatusService.handleMessageRead(data, client);
+    await this.messageStatusService.handleMessageRead(data, client);
   }
 
   // ==================== FILE UPLOAD EVENTS ====================
-  
+
   /**
    * Handle file chunk upload event
    * - Validates upload data using UploadFileChunkDto
@@ -168,8 +190,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   public async handleUploadFileChunk(
     @MessageBody() data: UploadFileChunkDto,
     @ConnectedSocket() client: AuthenticatedSocket,
-  ) {
-    return this.uploadHandlerService.handleUploadFileChunk(data, client);
+  ): Promise<void> {
+    await this.uploadHandlerService.handleUploadFileChunk(data, client);
   }
 
   // Helper methods

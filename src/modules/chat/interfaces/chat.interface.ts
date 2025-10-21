@@ -27,10 +27,6 @@ export interface IChatMessage {
     editedAt?: Date;
     attachments?: {
         url: string;
-        type: string;
-        name: string;
-        size: number;
-        duration?: number;
     }[];
     messageStatus?: IMessageStatusEntry[];
     isPublished?: boolean;

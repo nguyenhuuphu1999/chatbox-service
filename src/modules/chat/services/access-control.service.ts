@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { SOCKET_EVENTS } from 'src/shared/constants';
 import { MessageStatus } from 'src/shared/constants/message-status.constants';
-import { MessageWithSender, MessageHistoryResponse, ErrorResponse, FileUploadCompleteInfo, NewMessageEvent } from '../interfaces/socket.interface';
+import { MessageWithSender, ErrorResponse, FileUploadCompleteInfo, NewMessageEvent, PartnerMessagesResponse, ConversationResponse } from '../interfaces/socket.interface';
 
 @Injectable()
 export class AccessControlService {
@@ -19,13 +19,23 @@ export class AccessControlService {
     this.logger.log(`Published new message to user ${targetUserKey}: ${message?.id ?? 'unknown'}`);
   }
 
-  publishMessageHistory(server: Server, userKey: string, data: MessageHistoryResponse): void {
-    server.to(`user_${userKey}`).emit(SOCKET_EVENTS.SERVER_TO_CLIENT.MESSAGE_HISTORY, {
+
+  publishConversationList(server: Server, userKey: string, data: ConversationResponse): void {
+    server.to(`user_${userKey}`).emit(SOCKET_EVENTS.SERVER_TO_CLIENT.CONVERSATION_LIST, {
       ...data,
       timestamp: new Date(),
     });
-    this.logger.log(`Published message history to user ${userKey}`);
+    this.logger.log(`Published conversation list to user ${userKey}`);
   }
+
+  publishGetConversation(server: Server, userKey: string, data: PartnerMessagesResponse): void {
+    server.to(`user_${userKey}`).emit(SOCKET_EVENTS.SERVER_TO_CLIENT.GET_CONVERSATION, {
+      ...data,
+      timestamp: new Date(),
+    });
+    this.logger.log(`Published get conversation to user ${userKey} - ${data.messages.length} messages`);
+  }
+
 
 
   publishTypingStart(server: Server, userKey: string, userName: string, recipientKey: string): void {

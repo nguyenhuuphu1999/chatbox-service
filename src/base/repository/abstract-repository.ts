@@ -52,7 +52,7 @@ export abstract class BaseMongeeseRepository<T extends Document> {
             .find({ ...filter, deletedAt: null }, projection)
             .sort(sort || { createdAt: -1 })
 
-        return lean ? query.lean() : query.exec();
+        return lean ? (query.lean() as unknown as T[]) : query.exec();
     }
 
     public async updateById(
@@ -71,7 +71,7 @@ export abstract class BaseMongeeseRepository<T extends Document> {
         session?: ClientSession
     ): Promise<T | null> {
         await this.model
-            .updateOne({ ...filter, deletedAt: null }, update, { new: true, session })
+            .updateOne({ ...filter, deletedAt: null }, update, { session })
             .exec();
         return this.findOne(filter);
     }

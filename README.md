@@ -1,295 +1,357 @@
-# Chat Socket App
+# ChatBox Service
 
-A real-time chat application built with NestJS, Socket.IO, and MongoDB.
+A real-time chat service built with NestJS, Socket.IO, and MongoDB. This service provides instant messaging capabilities with file upload support, message status tracking, and user presence management.
 
-## Features
+## 🚀 Features
 
-- Real-time messaging with Socket.IO
-- User authentication with userKey validation
-- **1-1 Private chat only** (no group chat)
-- Message types: text, image, file, video
-- Chunk-based file upload with progress tracking
-- Online/offline status tracking
-- Typing indicators
-- Message replies
-- Access control with publish/modify functionality
-- MongoDB for data persistence
-- Message history via Socket.IO (no REST API needed)
-- **Modular Gateway Architecture** (separate gateways for rooms, messages, file uploads)
+- **Real-time Messaging**: Instant message delivery using Socket.IO
+- **File Upload**: Support for image, video, and document uploads with chunked transfer
+- **Message Status**: Track sent, delivered, and read status for messages
+- **User Presence**: Online/offline status and last seen tracking
+- **Typing Indicators**: Real-time typing status notifications
+- **Message History**: Paginated conversation history and message retrieval
+- **User Management**: User registration and profile management
+- **Health Monitoring**: Application and database health checks
 
-## Project Structure
+## 🏗️ Architecture
 
-Following the vpncn2-be project structure:
+### Tech Stack
+
+- **Backend**: NestJS (Node.js framework)
+- **Real-time**: Socket.IO
+- **Database**: MongoDB with Mongoose ODM
+- **Validation**: class-validator & class-transformer
+- **File Upload**: Multer with chunked transfer
+- **Containerization**: Docker & Docker Compose
+
+### Project Structure
 
 ```
 src/
-├── base/                    # Base classes and interfaces
-│   ├── entities/           # Base entity
-│   ├── interfaces/         # Base interfaces
-│   └── repository/         # Abstract repository
-├── modules/                # Feature modules
-│   ├── chat/              # Chat module with Socket.IO
-│   │   ├── gateways/      # Modular gateways
-│   │   │   ├── main.gateway.ts        # Main connection handler
-│   │   │   ├── room.gateway.ts        # Room management
-│   │   │   ├── message.gateway.ts     # Message handling
-│   │   │   └── file-upload.gateway.ts # File upload handling
-│   │   └── services/      # Business logic
-│   └── users/             # User management module
+├── base/                    # Base entities and repositories
+├── modules/
+│   ├── chat/               # Chat functionality
+│   │   ├── dtos/           # Data Transfer Objects
+│   │   ├── filters/        # Exception filters
+│   │   ├── gateways/       # Socket.IO gateways
+│   │   ├── interceptors/   # Request/response interceptors
+│   │   ├── interfaces/     # TypeScript interfaces
+│   │   └── services/       # Business logic services
+│   ├── health/             # Health check endpoints
+│   └── users/              # User management
 ├── repositories/           # Data access layer
 ├── schemas/               # MongoDB schemas
-└── shared/               # Shared DTOs and constants
-    ├── dtos/             # Base DTOs and paging
-    ├── constants/        # Application constants
-    └── config/           # Configuration
+└── shared/                # Shared constants and utilities
 ```
 
-## Installation
+## 🗄️ Database Design
 
-1. Clone the repository
-2. Install dependencies:
-```bash
-npm install
-```
+### Collections
 
-3. Copy environment file:
-```bash
-cp env.example .env
-```
-
-4. Update the `.env` file with your MongoDB connection string and JWT secret.
-
-5. Start the application:
-```bash
-# Development
-npm run start:dev
-
-# Production
-npm run build
-npm run start:prod
-```
-
-## Socket.IO Only
-
-This application **does not provide REST API endpoints**. All communication is handled through Socket.IO connections.
-
-## Socket.IO Events
-
-### Client to Server Events:
-
-**Room Management:**
-- `create_private_room` - Create 1-1 private room
-- `join_room` - Join a chat room
-- `leave_room` - Leave a chat room
-
-**Messages:**
-- `send_message` - Send a message
-- `get_message_history` - Get message history via Socket.IO
-- `modify_message` - Modify a message
-- `publish_message` - Publish a message
-
-**File Upload:**
-- `upload_file_chunk` - Upload file chunk
-
-**Typing:**
-- `typing_start` - Start typing indicator
-- `typing_stop` - Stop typing indicator
-
-### Server to Client Events:
-
-**Messages:**
-- `new_message` - New message received
-- `message_history` - Message history response
-- `message_modified` - Message was modified
-- `message_published` - Message was published
-
-**Room Events:**
-- `private_room_created` - Private room created
-- `user_joined_room` - User joined room
-- `user_left_room` - User left room
-
-**File Upload:**
-- `upload_progress` - File upload progress
-- `upload_complete` - File upload completed
-
-**Status:**
-- `user_online` - User came online
-- `user_offline` - User went offline
-- `user_typing` - User typing status
-
-**System:**
-- `error` - Error occurred
-- `success` - Success response
-
-## Usage
-
-### WebSocket Connection
-
-Connect to the main chat namespace:
-```javascript
-const socket = io('http://localhost:3000/chat', {
-  query: {
-    userKey: 'your_user_key',
-    userName: 'Your Name',
-    phoneNumber: '+1234567890',
-    fullName: 'Your Full Name',
-    avatar: 'https://example.com/avatar.jpg'
-  }
-});
-```
-
-### Gateway Namespaces
-
-The application uses multiple gateway namespaces for better organization:
-
-- `/chat` - Main connection and user status
-- `/chat/rooms` - Room management (create, join, leave)
-- `/chat/messages` - Message handling and typing
-- `/chat/upload` - File upload functionality
-
-### Creating Private Room
-
-```javascript
-socket.emit('create_private_room', { user2Key: 'other_user_key' });
-```
-
-### Getting Message History
-
-```javascript
-socket.emit('get_message_history', {
-  roomId: 'room123',
-  page: 1,
-  limit: 50
-});
-```
-
-### Access Control Features
-
-The application includes access control with publish/modify functionality:
-
-```javascript
-// Modify a message
-socket.emit('modify_message', {
-  messageId: 'message123',
-  roomId: 'room123',
-  newContent: 'Updated message content'
-});
-
-// Publish a message
-socket.emit('publish_message', {
-  messageId: 'message123',
-  roomId: 'room123'
-});
-```
-
-### Listening for Events
-
-```javascript
-// Listen for new messages
-socket.on('new_message', (message) => {
-  console.log('New message:', message);
-});
-
-// Listen for user status
-socket.on('user_online', (user) => {
-  console.log('User online:', user);
-});
-```
-
-## Database Schema
-
-### Users
-- userKey, userName, phoneNumber, fullName
-- avatar, isOnline, lastSeen
-
-### Chat Rooms (1-1 Private Only)
-- name, description
-- user1Key, user2Key (two participants only)
-- createdBy, lastMessage, lastMessageAt
-
-### Chat Messages
-- roomId, senderKey, content
-- messageType (using MessageType constants: text/image/file/video)
-- replyTo, isEdited, editedAt
-- attachments (array)
-- isPublished, canModify, publishedAt, modifiedAt
-
-## Message Types
-
-All message types are defined as constants (no hard coding):
-
+#### Users Collection
 ```typescript
-export const MESSAGE_CONSTANTS = {
-  TYPES: {
-    TEXT: 'text',
-    IMAGE: 'image', 
-    FILE: 'file',
-    VIDEO: 'video',
-  }
-} as const;
-
-export type MessageType = typeof MESSAGE_CONSTANTS.TYPES[keyof typeof MESSAGE_CONSTANTS.TYPES];
+{
+  userKey: string,           // Unique user identifier
+  userName: string,          // Display name
+  phoneNumber: string,       // Unique phone number
+  fullName: string,          // Full name
+  avatar?: string,           // Profile picture URL
+  isOnline: boolean,         // Online status
+  lastSeen?: Date,           // Last activity timestamp
+  createdAt: Date,           // Account creation date
+  updatedAt: Date,           // Last update date
+  deletedAt?: Date           // Soft delete timestamp
+}
 ```
 
-## Technologies Used
+#### Chat Messages Collection
+```typescript
+{
+  recipientKey?: string,     // Message recipient
+  senderKey: string,         // Message sender
+  content: string,           // Message content
+  messageType: MessageType,  // 'text' | 'image' | 'file' | 'video'
+  replyTo?: string,          // Reply to message ID
+  isEdited: boolean,         // Edit status
+  editedAt?: Date,           // Edit timestamp
+  attachments?: [{           // File attachments
+    url: string
+  }],
+  messageStatus?: [{         // Message status tracking
+    userKey: string,
+    status: 'sent' | 'delivered' | 'read',
+    timestamp: Date
+  }],
+  createdAt: Date,           // Message creation date
+  updatedAt: Date,           // Last update date
+  deletedAt?: Date           // Soft delete timestamp
+}
+```
 
-- **NestJS** - Backend framework
-- **Socket.IO** - Real-time communication (ONLY)
-- **MongoDB** - Database
-- **Mongoose** - ODM
-- **UserKey Validation** - Authentication
-- **No REST API** - Socket.IO only architecture
-- TypeScript - Programming language
-- Chunk-based File Upload - File handling
 
-## License
+## 📡 Socket.IO Events
 
-## API Docs & Client
+### Client to Server Events
 
-- AsyncAPI spec: `docs/asyncapi.yaml` (open in https://studio.asyncapi.com)
-- Postman collection (WebSocket): `docs/postman/ChatSocket.postman_collection.json`
-- Postman collection (REST API): `docs/postman/UserAPI.postman_collection.json`
+| Event | Description | Payload |
+|-------|-------------|---------|
+| `send_message` | Send a new message | `SendMessageDto` |
+| `conversation_list` | Get conversation list | `GetMessageHistoryDto` |
+| `get_conversation` | Get messages with specific user | `GetConversationDto` |
+| `upload_file_chunk` | Upload file chunk | `UploadFileChunkDto` |
+| `typing_start` | Start typing indicator | `TypingDto` |
+| `typing_stop` | Stop typing indicator | `TypingDto` |
+| `message_delivered` | Mark message as delivered | `MessageStatusDto` |
+| `message_read` | Mark message as read | `MessageStatusDto` |
 
-### REST API Endpoints
+### Server to Client Events
 
-**User Management:**
-- `POST /users` - Create a new user
-- `GET /users/:userKey` - Get user by userKey
+| Event | Description | Payload |
+|-------|-------------|---------|
+| `new_message` | New message received | `NewMessageEvent` |
+| `conversation_list` | Conversation list response | `ConversationResponse` |
+| `get_conversation` | Conversation messages | `PartnerMessagesResponse` |
+| `message_status_update` | Message status update | `MessageStatusUpdateEvent` |
+| `upload_progress` | File upload progress | `UploadProgressEvent` |
+| `upload_complete` | File upload complete | `UploadCompleteEvent` |
+| `user_online` | User came online | `UserPresenceEvent` |
+| `user_offline` | User went offline | `UserPresenceEvent` |
+| `user_typing` | User typing indicator | `TypingEvent` |
+| `error` | Error occurred | `ErrorResponse` |
+| `success` | Success response | `SuccessResponse` |
 
-**Health Check:**
-- `GET /health` - Application health check
-- `GET /health/database` - MongoDB connection health check
+## 🔧 Installation & Setup
 
-**Example Create User:**
+### Prerequisites
+
+- Node.js >= 18.0.0
+- pnpm >= 8.0.0
+- MongoDB >= 7.0
+- Docker & Docker Compose (optional)
+
+### Local Development
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd chatbox-service
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+3. **Environment setup**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. **Start MongoDB**
+   ```bash
+   # Using Docker
+   docker-compose up -d mongodb
+   
+   # Or start MongoDB locally
+   mongod
+   ```
+
+5. **Run the application**
+   ```bash
+   # Development mode
+   pnpm run start:dev
+   
+   # Production mode
+   pnpm run build
+   pnpm run start:prod
+   ```
+
+### Docker Deployment
+
+1. **Build and start all services**
+   ```bash
+   docker-compose up -d
+   ```
+
+2. **View logs**
+   ```bash
+   docker-compose logs -f chat-app
+   ```
+
+3. **Stop services**
+   ```bash
+   docker-compose down
+   ```
+
+## 🧪 Testing
+
+### Manual Testing with Socket.IO Client
+
+1. **Connect to the service**
+   ```javascript
+   const io = require('socket.io-client');
+   
+   const socket = io('http://localhost:3000/chat', {
+     extraHeaders: {
+       'user-key': 'user_1',
+       'user-name': 'User 1',
+       'avatar': 'avatar1.jpg'
+     }
+   });
+   ```
+
+2. **Send a message**
+   ```javascript
+   socket.emit('send_message', {
+     recipientKey: 'user_2',
+     content: 'Hello World!',
+     messageType: 'text'
+   });
+   ```
+
+3. **Listen for responses**
+   ```javascript
+   socket.on('new_message', (data) => {
+     console.log('New message:', data);
+   });
+   
+   socket.on('error', (error) => {
+     console.error('Error:', error);
+   });
+   ```
+
+### API Testing
+
+#### Create User
 ```bash
 curl -X POST http://localhost:3000/users \
   -H "Content-Type: application/json" \
   -d '{
     "userKey": "user_1",
-    "userName": "john_doe", 
-    "phoneNumber": "+1234567890",
-    "fullName": "John Doe",
-    "avatar": "https://example.com/avatar.jpg"
+    "userName": "User 1",
+    "phoneNumber": "1234567890",
+    "fullName": "User One"
   }'
 ```
 
-**Example Health Check:**
+#### Get User
 ```bash
-# Application health
-curl -X GET http://localhost:3000/health
-
-# Database health
-curl -X GET http://localhost:3000/health/database
+curl http://localhost:3000/users/user_1
 ```
 
-### Environment Variables for Documentation
+#### Health Check
+```bash
+curl http://localhost:3000/health
+curl http://localhost:3000/health/database
+```
 
-The documentation files use environment variables for configuration:
+### Test Scenarios
 
-- `HOST`: Server host (default: localhost)
-- `PORT`: Server port (default: 3000) 
-- `SOCKET_NAMESPACE`: Socket.IO namespace (default: /chat)
+#### 1. Basic Messaging
+- Create two users
+- Connect both users via Socket.IO
+- Send messages between users
+- Verify message delivery and status updates
 
-Update these variables in your `.env` files to match your deployment environment.
+#### 2. File Upload
+- Send image/video message with attachments
+- Verify file upload progress
+- Check file completion notification
 
-This project is licensed under the UNLICENSED License.
+#### 3. Message Status
+- Send message and verify 'sent' status
+- Mark as 'delivered' and verify update
+- Mark as 'read' and verify final status
+
+#### 4. User Presence
+- Connect user and verify 'online' status
+- Disconnect user and verify 'offline' status
+- Check 'lastSeen' timestamp updates
+
+#### 5. Typing Indicators
+- Start typing and verify indicator sent
+- Stop typing and verify indicator cleared
+
+## 📋 API Endpoints
+
+### REST Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/users` | Create new user |
+| GET | `/users/:userKey` | Get user by key |
+| GET | `/health` | Application health check |
+| GET | `/health/database` | Database health check |
+
+### Socket.IO Namespaces
+
+- **Chat**: `/chat` - Main chat functionality
+- **Upload**: `/chat/upload` - File upload handling
+
+## 🔒 Security Features
+
+- **Input Validation**: All inputs validated using class-validator
+- **Authentication**: User authentication via headers
+- **Rate Limiting**: Built-in rate limiting for file uploads
+- **File Type Validation**: Restricted file types for uploads
+- **Size Limits**: Maximum file size enforcement
+- **CORS**: Configurable CORS settings
+
+## 📊 Monitoring & Logging
+
+- **Health Checks**: Application and database health monitoring
+- **Structured Logging**: Comprehensive logging with different levels
+- **Error Tracking**: Detailed error logging and reporting
+- **Performance Metrics**: Request timing and performance tracking
+
+## 🚀 Deployment
+
+### Environment Variables
+
+```bash
+NODE_ENV=production
+HOST=localhost
+MONGODB_URI=mongodb://admin:password123@mongodb:27017/chat-socket-app?authSource=admin
+PORT=3000
+CORS_ORIGIN=*
+MAX_FILE_SIZE=52428800
+ALLOWED_FILE_TYPES=image/*,video/*,application/pdf
+UPLOAD_PATH=./uploads
+CHUNK_SIZE=1048576
+SOCKET_NAMESPACE=/chat
+SOCKET_PING_TIMEOUT=60000
+SOCKET_PING_INTERVAL=25000
+```
+
+### Production Considerations
+
+- Use environment-specific configuration files
+- Set up proper MongoDB authentication
+- Configure reverse proxy (nginx) for production
+- Set up SSL/TLS certificates
+- Implement proper backup strategies
+- Monitor application performance and logs
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the documentation
+- Review the test cases for usage examples
+
+---
+
+**Built with ❤️ using NestJS, Socket.IO, and MongoDB**

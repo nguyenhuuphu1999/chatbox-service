@@ -20,7 +20,7 @@ export class UploadHandlerService {
   public async handleUploadFileChunk(
     data: UploadFileChunkDto,
     client: AuthenticatedSocket,
-  ): Promise<ServiceResponse<UploadChunkResponse>> {
+  ): Promise<void> {
     try {
       const recipient = await this.userRepository.findByUserKey(data.recipientKey);
       if (!recipient) {
@@ -28,7 +28,7 @@ export class UploadHandlerService {
           code: 'RECIPIENT_NOT_FOUND',
           message: 'Recipient not found'
         });
-        return { error: 'Recipient not found' };
+        return;
       }
 
       const chunkBuffer = Buffer.from(data.chunkData, 'base64');
@@ -70,11 +70,9 @@ export class UploadHandlerService {
       }
 
       this.logger.log(`File chunk ${data.chunkIndex}/${data.totalChunks} uploaded by ${client.userName} for ${data.recipientKey}`);
-      return { success: true, data: result };
     } catch (error) {
-      this.logger.error('File upload error:', error);
+      this.logger.error(`File upload error: ${JSON.stringify(error)}`);
       this.accessControlService.publishError(this.accessControlService.server!, client.userKey || '', error);
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 }

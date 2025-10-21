@@ -25,10 +25,6 @@ export interface MessageWithSender {
   replyTo?: string;
   attachments?: {
     url: string;
-    type: string;
-    name: string;
-    size: number;
-    duration?: number;
   }[];
   messageStatus?: IMessageStatusEntry[];
   createdAt: Date | string;
@@ -39,27 +35,6 @@ export interface MessageWithSender {
   };
 }
 
-export interface ConversationInfo {
-  partnerKey: string;
-  lastMessage: MessageWithSender;
-  messageCount: number;
-  unreadCount: number;
-  partner: {
-    userKey: string;
-    userName: string;
-    avatar?: string;
-    isOnline: boolean;
-  } | null;
-}
-
-export interface MessageHistoryResponse {
-  conversations: ConversationInfo[];
-  pagination: {
-    currentPage: number;
-    limit: number;
-    totalConversations: number;
-  };
-}
 
 export interface ServiceResponse<T = unknown> {
   success?: boolean;
@@ -84,4 +59,29 @@ export interface FileUploadCompleteInfo {
 export interface NewMessageEvent {
   message: MessageWithSender;
   timestamp: Date | string;
+}
+
+export interface PartnerMessagesResponse {
+  messages: MessageWithSender[];
+  pagination: {
+    currentPage: number;
+    limit: number;
+    totalMessages: number;
+  };
+}
+
+export interface ConversationItem {
+  recipientKey: string;
+  senderKey: string;
+  content: string;
+  messageType: MessageType;
+}
+
+export interface ConversationResponse {
+  conversations: ConversationItem[];
+  pagination: {
+    currentPage: number;
+    limit: number;
+    totalConversations: number;
+  };
 }
