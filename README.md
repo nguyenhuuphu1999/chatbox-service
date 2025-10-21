@@ -246,6 +246,37 @@ curl http://localhost:3000/health
 curl http://localhost:3000/health/database
 ```
 
+#### Upload Image
+```bash
+curl -X POST http://localhost:3000/upload/image \
+  -F "image=@/path/to/your/image.jpg"
+```
+
+#### Upload File
+```bash
+curl -X POST http://localhost:3000/upload/file \
+  -F "file=@/path/to/your/file.pdf"
+```
+
+#### Upload with JavaScript/FormData
+```javascript
+const formData = new FormData();
+formData.append('image', fileInput.files[0]);
+
+fetch('http://localhost:3000/upload/image', {
+  method: 'POST',
+  body: formData
+})
+.then(response => response.json())
+.then(data => {
+  if (data.success) {
+    console.log('File uploaded:', data.data.url);
+  } else {
+    console.error('Upload failed:', data.error);
+  }
+});
+```
+
 ### Test Scenarios
 
 #### 1. Basic Messaging
@@ -273,6 +304,13 @@ curl http://localhost:3000/health/database
 - Start typing and verify indicator sent
 - Stop typing and verify indicator cleared
 
+#### 6. File Upload API
+- Upload image file via REST API
+- Upload document file via REST API
+- Verify file is accessible via URL
+- Test invalid file type rejection
+- Test file size limits
+
 ## 📋 API Endpoints
 
 ### REST Endpoints
@@ -281,6 +319,8 @@ curl http://localhost:3000/health/database
 |--------|----------|-------------|
 | POST | `/users` | Create new user |
 | GET | `/users/:userKey` | Get user by key |
+| POST | `/upload/image` | Upload image file (jpg, png, gif, webp) |
+| POST | `/upload/file` | Upload any file (images, videos, documents) |
 | GET | `/health` | Application health check |
 | GET | `/health/database` | Database health check |
 

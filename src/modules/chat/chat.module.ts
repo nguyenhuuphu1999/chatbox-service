@@ -15,9 +15,11 @@ import { UploadHandlerService } from './services/upload-handler.service';
 import { WsValidationExceptionFilter } from './filters/ws-validation-exception.filter';
 import { ConversationListService } from './services/conversation-list.service';
 import { GetConversationService } from './services/get-conversation.service';
+import { FileUploadController } from './controllers/file-upload.controller';
 
 @Module({
   imports: [RepositoriesModule],
+  controllers: [FileUploadController],
   providers: [
     ChatGateway,
     ConnectionService,

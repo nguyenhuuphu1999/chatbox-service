@@ -2,12 +2,19 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { APP_CONFIG } from './shared/config/app.config';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import 'dotenv/config'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: true });
   app.enableCors(APP_CONFIG.SERVER.CORS);
   app.useGlobalPipes(new ValidationPipe());
+  
+  // Serve static files from uploads directory
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   const PORT = APP_CONFIG.SERVER.PORT;
   Logger.log(`Socket.IO Chat Server starting on port ${PORT}`);
@@ -26,6 +33,8 @@ async function bootstrap() {
       Logger.log(`🔧 REST API endpoints:`);
       Logger.log(`   - POST /users - Create user`);
       Logger.log(`   - GET /users/:userKey - Get user`);
+      Logger.log(`   - POST /upload/image - Upload image file`);
+      Logger.log(`   - POST /upload/file - Upload any file`);
       Logger.log(`   - GET /health - Health check`);
       Logger.log(`   - GET /health/database - Database health check`);
     });
