@@ -1,0 +1,99 @@
+{
+  "info": {
+    "name": "User API",
+    "_postman_id": "b2c3d4e5-f6g7-8901-2345-67890bcdefgh",
+    "description": "REST API for user management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userKey\": \"user_1\",\n  \"userName\": \"john_doe\",\n  \"phoneNumber\": \"+1234567890\",\n  \"fullName\": \"John Doe\",\n  \"avatar\": \"https://example.com/avatar.jpg\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users"
+          ]
+        },
+        "description": "Create a new user"
+      }
+    },
+    {
+      "name": "Get User",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userKey}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "{{userKey}}"
+          ]
+        },
+        "description": "Get user by userKey"
+      }
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": "Check application health"
+      }
+    },
+    {
+      "name": "Database Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health/database",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health",
+            "database"
+          ]
+        },
+        "description": "Check MongoDB connection health"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "userKey",
+      "value": "user_1"
+    }
+  ]
+}

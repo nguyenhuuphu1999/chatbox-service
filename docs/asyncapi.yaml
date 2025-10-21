@@ -1,0 +1,150 @@
+asyncapi: '2.6.0'
+info:
+  title: Chat Socket API
+  version: '1.0.0'
+servers:
+  local:
+    url: ws://${HOST}:${PORT}
+    protocol: ws
+    description: Socket.IO base, namespace ${SOCKET_NAMESPACE}
+defaultContentType: application/json
+channels:
+  /chat:
+    description: Main namespace
+  /chat/messages:
+    description: Message namespace
+    publish:
+      message:
+        oneOf:
+          - : '#/components/messages/SendMessage'
+          - : '#/components/messages/GetMessageHistory'
+    subscribe:
+      message:
+        oneOf:
+          - : '#/components/messages/NewMessage'
+          - : '#/components/messages/MessageHistory'
+  /chat/rooms:
+    description: Room namespace
+    publish:
+      message:
+        oneOf:
+          - : '#/components/messages/JoinRoom'
+          - : '#/components/messages/LeaveRoom'
+components:
+  messages:
+    SendMessage:
+      name: send_message
+      payload:
+        type: object
+        required: [roomId, content, messageType]
+        properties:
+          roomId: { type: string }
+          content: { type: string }
+          messageType:
+            type: string
+            enum: [text, image, file, video]
+          replyTo: { type: string }
+          attachments:
+            type: array
+            items:
+              type: object
+              properties:
+                url: { type: string }
+                type: { type: string }
+                name: { type: string }
+                size: { type: number }
+                duration: { type: number }
+    GetMessageHistory:
+      name: get_message_history
+      payload:
+        type: object
+        required: [roomId]
+        properties:
+          roomId: { type: string }
+          page: { type: integer, default: 1 }
+          limit: { type: integer, default: 50 }
+    JoinRoom:
+      name: join_room
+      payload:
+        type: object
+        required: [roomId]
+        properties:
+          roomId: { type: string }
+    LeaveRoom:
+      name: leave_room
+      payload:
+        type: object
+        required: [roomId]
+        properties:
+          roomId: { type: string }
+    NewMessage:
+      name: new_message
+      payload:
+        type: object
+        required: [id, roomId, senderKey, content, messageType, createdAt]
+        properties:
+          id: { type: string }
+          roomId: { type: string }
+          senderKey: { type: string }
+          content: { type: string }
+          messageType:
+            type: string
+            enum: [text, image, file, video]
+          replyTo: { type: string }
+          isEdited: { type: boolean }
+          editedAt: { type: string, format: date-time }
+          attachments:
+            type: array
+            items:
+              type: object
+              properties:
+                url: { type: string }
+                type: { type: string }
+                name: { type: string }
+                size: { type: number }
+                duration: { type: number }
+          createdAt: { type: string, format: date-time }
+    MessageHistory:
+      name: message_history
+      payload:
+        type: object
+        required: [roomId, messages]
+        properties:
+          roomId: { type: string }
+          messages:
+            type: array
+            items:
+              : '#/components/schemas/Message'
+          pagination:
+            type: object
+            properties:
+              currentPage: { type: integer }
+              totalPages: { type: integer }
+              totalMessages: { type: integer }
+              hasMore: { type: boolean }
+  schemas:
+    Message:
+      type: object
+      required: [id, roomId, senderKey, content, messageType, createdAt]
+      properties:
+        id: { type: string }
+        roomId: { type: string }
+        senderKey: { type: string }
+        content: { type: string }
+        messageType:
+          type: string
+          enum: [text, image, file, video]
+        replyTo: { type: string }
+        isEdited: { type: boolean }
+        editedAt: { type: string, format: date-time }
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              url: { type: string }
+              type: { type: string }
+              name: { type: string }
+              size: { type: number }
+              duration: { type: number }
+        createdAt: { type: string, format: date-time }

@@ -1,0 +1,96 @@
+{
+  "info": {
+    "name": "Chat Socket API",
+    "_postman_id": "a1b2c3d4-e5f6-7890-1234-56789abcdeff",
+    "description": "WebSocket collection for Socket.IO chat app. Open a request to connect, then use the WebSocket console to send frames (e.g. 42[\"join_room\", {\"roomId\":\"{{roomId}}\"}]).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Connect /chat (Socket.IO handshake)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "ws://{{host}}:{{port}}{{socketNamespace}}/socket.io/?EIO=4&transport=websocket",
+          "protocol": "ws",
+          "host": [
+            "{{host}}"
+          ],
+          "port": "{{port}}",
+          "path": [
+            "{{socketNamespace}}",
+            "socket.io",
+            ""
+          ],
+          "query": [
+            { "key": "EIO", "value": "4" },
+            { "key": "transport", "value": "websocket" }
+          ]
+        },
+        "header": [
+          { "key": "user-key", "value": "{{userKey}}" }
+        ],
+        "description": "Connect to Socket.IO namespace and authenticate with headers."
+      },
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      }
+    },
+    {
+      "name": "Connect /chat (namespace root)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "ws://{{host}}:{{port}}{{socketNamespace}}",
+          "protocol": "ws",
+          "host": [
+            "{{host}}"
+          ],
+          "port": "{{port}}",
+          "path": [
+            "{{socketNamespace}}"
+          ]
+        },
+        "description": "Alternative direct WS connect (useful for manual frames). After connect, send frames in WS console."
+      },
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      }
+    },
+    {
+      "name": "Notes: Frames to send (copy into WS console)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "ws://{{host}}:{{port}}{{socketNamespace}}",
+          "protocol": "ws",
+          "host": [
+            "{{host}}"
+          ],
+          "port": "{{port}}",
+          "path": [
+            "{{socketNamespace}}"
+          ]
+        },
+        "description": "=== SOCKET.IO EVENTS LIST ===\n\n📡 NAMESPACES:\n- /chat (Main - connection/auth)\n- /chat/rooms (Room management)\n- /chat/messages (Message operations)\n- /chat/upload (File upload)\n\n🔵 CLIENT TO SERVER EVENTS:\n\n1. ROOM MANAGEMENT (/chat/rooms):\n42[\"create_private_room\", {\"user2Key\":\"user_2\"}]\n42[\"join_room\", {\"roomId\":\"{{roomId}}\"}]\n42[\"leave_room\", {\"roomId\":\"{{roomId}}\"}]\n\n2. MESSAGES (/chat/messages):\n42[\"send_message\", {\"roomId\":\"{{roomId}}\",\"content\":\"Hi\",\"messageType\":\"text\"}]\n42[\"get_message_history\", {\"roomId\":\"{{roomId}}\",\"page\":1,\"limit\":50}]\n42[\"modify_message\", {\"messageId\":\"msg_123\",\"roomId\":\"{{roomId}}\",\"newContent\":\"Updated message\"}]\n42[\"publish_message\", {\"messageId\":\"msg_123\",\"roomId\":\"{{roomId}}\"}]\n42[\"typing_start\", {\"roomId\":\"{{roomId}}\"}]\n42[\"typing_stop\", {\"roomId\":\"{{roomId}}\"}]\n\n3. FILE UPLOAD (/chat/upload):\n42[\"upload_file_chunk\", {\"fileId\":\"file_123\",\"chunkIndex\":0,\"totalChunks\":5,\"chunkData\":\"base64data\",\"fileName\":\"image.jpg\",\"fileType\":\"image/jpeg\",\"fileSize\":1024000,\"roomId\":\"{{roomId}}\"}]\n\n🟢 SERVER TO CLIENT EVENTS (Responses):\n\n1. MESSAGES:\n42[\"new_message\", {\"message\":{...},\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n42[\"message_history\", {\"roomId\":\"{{roomId}}\",\"messages\":[...],\"pagination\":{...},\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n42[\"message_modified\", {\"messageId\":\"msg_123\",\"roomId\":\"{{roomId}}\",\"modifiedBy\":\"user_1\",\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n42[\"message_published\", {\"messageId\":\"msg_123\",\"roomId\":\"{{roomId}}\",\"publishedBy\":\"user_1\",\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n\n2. ROOM EVENTS:\n42[\"private_room_created\", {\"room\":{...},\"createdBy\":\"user_1\",\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n42[\"user_joined_room\", {\"userKey\":\"user_1\",\"userName\":\"John\",\"roomId\":\"{{roomId}}\",\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n42[\"user_left_room\", {\"userKey\":\"user_1\",\"userName\":\"John\",\"roomId\":\"{{roomId}}\",\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n\n3. TYPING:\n42[\"user_typing\", {\"userKey\":\"user_1\",\"userName\":\"John\",\"roomId\":\"{{roomId}}\",\"isTyping\":true,\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n42[\"user_typing\", {\"userKey\":\"user_1\",\"userName\":\"John\",\"roomId\":\"{{roomId}}\",\"isTyping\":false,\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n\n4. USER STATUS:\n42[\"user_online\", {\"userKey\":\"user_1\",\"userName\":\"John\",\"isOnline\":true,\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n42[\"user_offline\", {\"userKey\":\"user_1\",\"userName\":\"John\",\"isOnline\":false,\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n\n5. FILE UPLOAD:\n42[\"upload_progress\", {\"fileId\":\"file_123\",\"progress\":60,\"roomId\":\"{{roomId}}\",\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n42[\"upload_complete\", {\"fileId\":\"file_123\",\"url\":\"/uploads/file_123.jpg\",\"fileName\":\"image.jpg\",\"fileType\":\"image/jpeg\",\"fileSize\":1024000,\"roomId\":\"{{roomId}}\",\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n\n6. ERROR/SUCCESS:\n42[\"error\", {\"code\":\"ROOM_NOT_FOUND\",\"message\":\"Room not found\",\"details\":null,\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n42[\"success\", {\"success\":true,\"data\":{...},\"timestamp\":\"2025-01-21T08:57:51.000Z\"}]\n\n📝 MESSAGE TYPES:\n- \"text\" - Text message\n- \"image\" - Image file\n- \"file\" - Document file\n- \"video\" - Video file\n\n🔗 CONNECTION URLS (with headers):\n- Main: ws://localhost:3000/chat/socket.io/?EIO=4&transport=websocket\n  Headers: user-key\n- Rooms: ws://localhost:3000/chat/rooms/socket.io/?EIO=4&transport=websocket\n  Headers: user-key\n- Messages: ws://localhost:3000/chat/messages/socket.io/?EIO=4&transport=websocket\n  Headers: user-key\n- Upload: ws://localhost:3000/chat/upload/socket.io/?EIO=4&transport=websocket\n  Headers: user-key\n\n📝 AUTHENTICATION:\n- Header: user-key (required)\n- User data (userName, phoneNumber, fullName, avatar) will be loaded from database\n"
+      },
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      }
+    }
+  ],
+  "variable": [
+    { "key": "host", "value": "localhost" },
+    { "key": "port", "value": "3000" },
+    { "key": "socketNamespace", "value": "/chat" },
+    { "key": "userKey", "value": "user_1" },
+    { "key": "userName", "value": "John" },
+    { "key": "phoneNumber", "value": "+123456789" },
+    { "key": "fullName", "value": "John Doe" },
+    { "key": "avatar", "value": "https://example.com/a.jpg" },
+    { "key": "roomId", "value": "room_123" }
+  ]
+}
