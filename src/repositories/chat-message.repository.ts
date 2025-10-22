@@ -268,36 +268,54 @@ export class ChatMessageRepository extends BaseMongeeseRepository<ChatMessageDoc
                 throw new Error(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
             }
 
-            // Use atomic update operation for better performance and consistency
+            // Use atomic update operation to add new status entry only if different from last status
             const result = await this.chatMessageModel.findOneAndUpdate(
                 { 
                     _id: messageId,
-                    deletedAt: null // Only update non-deleted messages
-                },
-                [
-                    {
-                        $set: {
-                            messageStatus: {
-                                $concatArrays: [
-                                    // Remove existing status for this user
+                    deletedAt: null, // Only update non-deleted messages
+                    // Only update if the last status for this user is different or doesn't exist
+                    $or: [
+                        { 'messageStatus': { $exists: false } },
+                        { 'messageStatus': { $size: 0 } },
+                        {
+                            $expr: {
+                                $ne: [
                                     {
-                                        $filter: {
-                                            input: { $ifNull: ['$messageStatus', []] },
-                                            cond: { $ne: ['$$this.userKey', userKey] }
+                                        $let: {
+                                            vars: {
+                                                lastStatus: {
+                                                    $arrayElemAt: [
+                                                        {
+                                                            $filter: {
+                                                                input: { $ifNull: ['$messageStatus', []] },
+                                                                cond: { $eq: ['$$this.userKey', userKey] }
+                                                            }
+                                                        },
+                                                        -1
+                                                    ]
+                                                }
+                                            },
+                                            in: '$$lastStatus.status'
                                         }
                                     },
-                                    // Add new status
-                                    [{
-                                        userKey: userKey,
-                                        status: status,
-                                        timestamp: new Date()
-                                    }]
+                                    status
                                 ]
-                            },
-                            updatedAt: new Date()
+                            }
                         }
+                    ]
+                },
+                {
+                    $push: {
+                        messageStatus: {
+                            userKey: userKey,
+                            status: status,
+                            timestamp: new Date()
+                        }
+                    },
+                    $set: {
+                        updatedAt: new Date()
                     }
-                ],
+                },
                 { 
                     new: true, // Return updated document
                     runValidators: true // Run schema validation
@@ -305,11 +323,11 @@ export class ChatMessageRepository extends BaseMongeeseRepository<ChatMessageDoc
             ).exec();
 
             if (!result) {
-                console.warn(`Message not found or already deleted: messageId=${messageId}`);
+                console.warn(`Message not found, already deleted, or status already exists: messageId=${messageId}, userKey=${userKey}, status=${status}`);
                 return null;
             }
 
-            console.log(`Message status updated successfully: messageId=${messageId}, userKey=${userKey}, status=${status}`);
+            console.log(`Message status added successfully: messageId=${messageId}, userKey=${userKey}, status=${status}`);
             return result;
 
         } catch (error) {
