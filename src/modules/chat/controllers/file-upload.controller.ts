@@ -95,16 +95,13 @@ export class FileUploadController {
         },
       }),
       fileFilter: (req, file, callback) => {
-        // Allow images, videos, and documents
+        // Allow images and documents (excluding videos)
         const allowedMimes = [
           'image/jpeg',
           'image/jpg',
           'image/png',
           'image/gif',
           'image/webp',
-          'video/mp4',
-          'video/webm',
-          'video/avi',
           'application/pdf',
           'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -148,6 +145,70 @@ export class FileUploadController {
       return {
         success: false,
         error: error.message || 'Failed to upload file',
+      };
+    }
+  }
+
+  @Post('video')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('video', {
+      storage: diskStorage({
+        destination: './uploads/videos',
+        filename: (req, file, callback) => {
+          const uniqueName = `${uuidv4()}${extname(file.originalname)}`;
+          callback(null, uniqueName);
+        },
+      }),
+      fileFilter: (req, file, callback) => {
+        // Allow only video files
+        const allowedMimes = [
+          'video/mp4',
+          'video/webm',
+          'video/ogg',
+          'video/avi',
+          'video/mov',
+          'video/wmv',
+          'video/flv',
+        ];
+
+        if (!allowedMimes.includes(file.mimetype)) {
+          return callback(
+            new BadRequestException('Only video files are allowed!'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+      limits: {
+        fileSize: 100 * 1024 * 1024, // 100MB limit for videos
+      },
+    }),
+  )
+  async uploadVideo(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<UploadImageResponse> {
+    try {
+      if (!file) {
+        throw new BadRequestException('No video file provided');
+      }
+
+      const fileUrl = `/uploads/videos/${file.filename}`;
+
+      return {
+        success: true,
+        data: {
+          url: fileUrl,
+          filename: file.filename,
+          originalName: file.originalname,
+          size: file.size,
+          mimetype: file.mimetype,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Failed to upload video',
       };
     }
   }

@@ -13,6 +13,7 @@ export interface ChunkUploadRequest {
   fileName: string;
   fileType: string;
   fileSize: number;
+  recipientKey?: string;
 }
 
 export interface ChunkUploadResponse {
@@ -30,21 +31,39 @@ export class FileUploadService {
   private readonly logger = new Logger(FileUploadService.name);
   private readonly uploadPath: string;
   private readonly maxFileSize: number;
+  private readonly maxVideoSize: number;
+  private readonly chunkSize: number;
   private readonly supportedTypes: string[];
 
   constructor(private readonly configService: ConfigService) {
     this.uploadPath = this.configService.get('UPLOAD_PATH', './uploads');
     this.maxFileSize = MESSAGE_CONSTANTS.VALIDATION.MAX_FILE_SIZE;
+    this.maxVideoSize = 100 * 1024 * 1024; // 100MB for videos
+    this.chunkSize = 1024 * 1024; // 1MB chunks for streaming
     this.supportedTypes = [
       ...MESSAGE_CONSTANTS.SUPPORTED_IMAGE_TYPES,
       ...MESSAGE_CONSTANTS.SUPPORTED_VIDEO_TYPES,
       ...MESSAGE_CONSTANTS.SUPPORTED_FILE_TYPES,
     ];
     
-    // Ensure upload directory exists
-    if (!fs.existsSync(this.uploadPath)) {
-      fs.mkdirSync(this.uploadPath, { recursive: true });
-    }
+    // Ensure upload directories exist
+    this.ensureDirectoriesExist();
+  }
+
+  private ensureDirectoriesExist(): void {
+    const directories = [
+      this.uploadPath,
+      path.join(this.uploadPath, 'images'),
+      path.join(this.uploadPath, 'videos'),
+      path.join(this.uploadPath, 'files'),
+      path.join(this.uploadPath, 'chunks'),
+    ];
+
+    directories.forEach(dir => {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    });
   }
 
   async uploadChunk(request: ChunkUploadRequest): Promise<ChunkUploadResponse> {
@@ -60,14 +79,15 @@ export class FileUploadService {
         };
       }
 
-      // Validate file size
-      if (request.fileSize > this.maxFileSize) {
+      // Validate file size based on file type
+      const maxSize = this.isVideoFile(request.fileType) ? this.maxVideoSize : this.maxFileSize;
+      if (request.fileSize > maxSize) {
         return {
           success: false,
           chunkIndex: request.chunkIndex,
           totalChunks: request.totalChunks,
           progress: 0,
-          error: 'File too large',
+          error: `File too large. Max size: ${maxSize / (1024 * 1024)}MB`,
         };
       }
 
@@ -128,12 +148,20 @@ export class FileUploadService {
       return aIndex - bIndex;
     });
 
-    // Generate final file name
+    // Generate final file name and determine destination directory
     const fileExtension = path.extname(fileName);
     const finalFileName = `${fileId}${fileExtension}`;
-    const finalFilePath = path.join(this.uploadPath, finalFileName);
+    
+    // Determine destination directory based on file type
+    const destinationDir = this.isVideoFile(fileType) 
+      ? path.join(this.uploadPath, 'videos')
+      : this.isImageFile(fileType)
+      ? path.join(this.uploadPath, 'images')
+      : path.join(this.uploadPath, 'files');
+    
+    const finalFilePath = path.join(destinationDir, finalFileName);
 
-    // Merge chunks
+    // Merge chunks using streaming for better performance
     const writeStream = fs.createWriteStream(finalFilePath);
     
     for (const chunk of chunks) {
@@ -144,10 +172,14 @@ export class FileUploadService {
 
     writeStream.end();
 
-    // Generate URL
-    const url = `/uploads/${finalFileName}`;
+    // Generate URL based on file type
+    const urlPath = this.isVideoFile(fileType) 
+      ? `/uploads/videos/${finalFileName}`
+      : this.isImageFile(fileType)
+      ? `/uploads/images/${finalFileName}`
+      : `/uploads/files/${finalFileName}`;
 
-    return { url };
+    return { url: urlPath };
   }
 
   private cleanupChunks(fileId: string): void {
@@ -167,8 +199,24 @@ export class FileUploadService {
     });
   }
 
+  private isVideoFile(fileType: string): boolean {
+    return fileType.startsWith('video/');
+  }
+
+  private isImageFile(fileType: string): boolean {
+    return fileType.startsWith('image/');
+  }
+
   generateFileId(): string {
     return uuidv4();
+  }
+
+  getChunkSize(): number {
+    return this.chunkSize;
+  }
+
+  getMaxVideoSize(): number {
+    return this.maxVideoSize;
   }
 }
 
